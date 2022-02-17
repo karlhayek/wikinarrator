@@ -1,0 +1,54 @@
+version: "3.6"
+
+services:
+  reverse-proxy:
+    image: traefik:v2.6.1
+    command:
+      - --providers.docker
+      - --entrypoints.web.address=:80
+      - --api.insecure=true # Enable the web UI and tells Traefik to listen to docker
+
+    ports:
+      - 80:80
+
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+
+    volumes:
+      # Mount local directory into the running container, synchronizing future changes
+      - ./frontend/src:/app/src:cached
+
+    ports:
+      - 8002:8080
+    labels:
+      - traefik.http.routers.frontend.rule=PathPrefix(`/`)
+      - traefik.http.routers.frontend.tls=false # Disable TLS (https)
+
+  backend:
+    ports:
+      - 8000:8000
+      - 8888:8888 # Jupyter
+    volumes:
+      # 'cached' makes the host’s view of the mount authoritative, which reduces CPU load on macOS
+      - ./backend:/app:cached
+    environment:
+      # Environment variables
+      - JUPYTER=jupyter lab --ip=0.0.0.0 --allow-root --no-browser --NotebookApp.custom_display_url=http://127.0.0.1:8888 --notebook-dir /app
+
+    build:
+      args:
+        # Install jupyter. To run: 'docker-compose exec backend bash', then run '$JUPYTER'
+        INSTALL_JUPYTER: ${INSTALL_JUPYTER-true}
+      context: ./backend
+
+    labels:
+      - traefik.http.routers.backend.rule=PathPrefix(`/api`,`/docs`,`/openapi`)
+      - traefik.http.routers.backend.tls=false
+
+    # Add '--reload' makes uvicorn reload when a file changes.
+    command: uvicorn main:app --reload --host 0.0.0.0 --port 8000
