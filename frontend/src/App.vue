@@ -1,29 +1,33 @@
+<script setup lang="ts">
+import { ref } from 'vue';
+// import HelloWorld from './components/HelloWorld.vue'
+import NavBar from './components/NavBar.vue'
+
+let count = ref(0);
+const isButtonDisabled = false;
+
+
+function increment() {
+  count.value++;
+}
+</script>
+
 <template>
-  <div id="app">
+  <header>
     <NavBar></NavBar>
 
+    <!-- <div class="wrapper"> -->
+    <!-- <HelloWorld msg="You did it!" />
+    </div>-->
+  </header>
+
+  <main>
     <div class="container">
+      <button :disabled="isButtonDisabled" v-on:click="increment">{{ count }}</button>
       Enter the name of the page you want to retrieve:
     </div>
-  </div>
+  </main>
 </template>
-
-<script>
-import NavBar from "./components/NavBar.vue";
-
-export default {
-  name: "App",
-  components: {
-    NavBar,
-  },
-
-  data() {
-    return {};
-  },
-
-  methods: {},
-};
-</script>
 
 <style>
 #app {
@@ -33,4 +37,3 @@ export default {
   color: #2c3e50;
 }
 </style>
-  
