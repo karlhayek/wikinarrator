@@ -5,7 +5,9 @@
       <a class="navbar-brand">{{ appName }}</a>
 
       <ul class="navbar-nav">
-        <li class="nav-item active"></li>
+        <li class="nav-item active">
+          <img src="@/assets/wikinarrator_logo.jpg" />
+        </li>
       </ul>
     </div>
   </nav>
@@ -22,6 +24,8 @@ let appName = import.meta.env.VITE_APP_NAME;
 <style>
 .nav-item > img {
   vertical-align: middle;
-  height: 40px;
+  height: 45px;
+  margin-bottom: -5px;
+  margin-top: -5px;
 }
 </style>

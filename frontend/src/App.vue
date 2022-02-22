@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import NavBar from './components/NavBar.vue'
+import axios from "axios";
+
 
 let count = ref(0);
 const pageLink = ref("");
@@ -22,13 +24,21 @@ function selectURLInput() {
   titleSelected.value = false
 }
 
-function onSubmit() {
+async function onSubmit() {
+  var pageInfo = ""
   if (urlSelected) {
-    console.log(urlSelected.value)
+    pageInfo = pageLink.value
   }
   else if (titleSelected) {
-    console.log(titleSelected.value)
+    pageInfo = pageTitle.value
   }
+
+  axios
+    .get("/api/" + pageInfo)
+    .then((res) => {
+      console.log(res["data"])
+    })
+    .catch((error) => console.log(error));
 }
 
 

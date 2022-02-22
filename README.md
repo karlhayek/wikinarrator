@@ -1,4 +1,9 @@
-# Wiki Audio Maker
+# Wiki Narrator
+
+
+<p align="left">
+<img src="frontend/src/assets/wikinarrator_logo.jpg" width=150>
+</p>
 
 Project that retrieves cleaned text from Wikipedia articles and sends them to a TTS service (Azure's speech studio, Deepzen, etc.)
 
