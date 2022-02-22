@@ -1,6 +1,6 @@
 <template>
 <body>
-  <nav class="navbar navbar-expand-md navbar-dark bg-dark mb-2">
+  <nav class="navbar navbar-expand-md navbar-dark bg-dark mb-1">
     <div class="container">
       <a class="navbar-brand">{{ appName }}</a>
 

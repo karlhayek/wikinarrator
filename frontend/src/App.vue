@@ -10,6 +10,8 @@ const pageTitle = ref("");
 let urlSelected = ref(false);
 let titleSelected = ref(false);
 
+let articleText = ref("");
+
 
 function increment() {
   count.value++;
@@ -26,17 +28,25 @@ function selectURLInput() {
 
 async function onSubmit() {
   var pageInfo = ""
-  if (urlSelected) {
+  if (urlSelected.value) {
     pageInfo = pageLink.value
   }
-  else if (titleSelected) {
+  else if (titleSelected.value) {
     pageInfo = pageTitle.value
   }
 
+  // console.log("Retrieving article content for page " + pageInfo)
+
+  if (pageInfo === "")
+    return
+
   axios
-    .get("/api/" + pageInfo)
+    .post("/api/getarticlecontent", {
+      title: pageInfo
+    })
     .then((res) => {
-      console.log(res["data"])
+      var pageContent = res["data"]['page_content']
+      articleText.value = pageContent
     })
     .catch((error) => console.log(error));
 }
@@ -80,10 +90,12 @@ async function onSubmit() {
         <b-button
           type="submit"
           variant="primary"
-          class="mt-3"
+          class="mt-3 mb-5"
           :disabled="(urlSelected || titleSelected) == false"
         >Submit</b-button>
       </b-form>
+
+      <b-form-textarea v-if="articleText != ''" v-model="articleText" rows="16" max-rows="30"></b-form-textarea>
     </div>
   </main>
 </template>
