@@ -1,30 +1,79 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-// import HelloWorld from './components/HelloWorld.vue'
 import NavBar from './components/NavBar.vue'
 
 let count = ref(0);
-const isButtonDisabled = false;
+const pageLink = ref("");
+const pageTitle = ref("");
+let urlSelected = ref(false);
+let titleSelected = ref(false);
 
 
 function increment() {
   count.value++;
 }
+
+function selectTitleInput() {
+  titleSelected.value = true
+  urlSelected.value = false
+}
+function selectURLInput() {
+  urlSelected.value = true
+  titleSelected.value = false
+}
+
+function onSubmit() {
+  if (urlSelected) {
+    console.log(urlSelected.value)
+  }
+  else if (titleSelected) {
+    console.log(titleSelected.value)
+  }
+}
+
+
 </script>
 
 <template>
   <header>
     <NavBar></NavBar>
-
-    <!-- <div class="wrapper"> -->
-    <!-- <HelloWorld msg="You did it!" />
-    </div>-->
   </header>
 
   <main>
     <div class="container">
-      <button :disabled="isButtonDisabled" v-on:click="increment">{{ count }}</button>
-      Enter the name of the page you want to retrieve:
+      <!-- <button :disabled="isButtonDisabled" v-on:click="increment">{{ count }}</button> -->
+      <br />Enter the wikipedia article you wish to retrieve:
+      <b-form @submit="onSubmit">
+        <b-input-group prepend="URL" class="mt-2 mb-1">
+          <b-form-input
+            class="shadow-none"
+            :class="{ 'border-primary': urlSelected }"
+            v-model="pageLink"
+            type="url"
+            placeholder="Enter article url"
+            @click="selectURLInput"
+            :required="urlSelected"
+          ></b-form-input>
+        </b-input-group>or
+        <b-input-group prepend="Title" class="mt-2 mb-1">
+          <b-form-input
+            v-model="pageTitle"
+            class="shadow-none"
+            :class="{ 'border-primary': titleSelected }"
+            type="text"
+            placeholder="Enter article title"
+            @click="selectTitleInput"
+            :required="titleSelected"
+          ></b-form-input>
+        </b-input-group>
+
+        <b-button
+          type="submit"
+          variant="primary"
+          class="mt-3"
+          :disabled="(urlSelected || titleSelected) == false"
+        >Submit</b-button>
+      </b-form>
     </div>
   </main>
 </template>
@@ -35,5 +84,9 @@ function increment() {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: #2c3e50;
+}
+
+.shadow-none {
+  border-width: 1.5px;
 }
 </style>
