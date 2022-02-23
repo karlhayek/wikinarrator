@@ -1,12 +1,12 @@
 FROM python:3.10-slim-bullseye
 
-# Install Python packages
-COPY requirements.txt /app/requirements.txt
-RUN pip install --upgrade pip && pip install --no-cache-dir -r /app/requirements.txt
-
 # For development, Jupyter remote kernel
 ARG INSTALL_JUPYTER=false
 RUN bash -c "if [ $INSTALL_JUPYTER == 'true' ] ; then pip install jupyterlab ; fi"
+
+# Install Python packages
+COPY requirements.txt /app/requirements.txt
+RUN pip install --upgrade pip && pip install --no-cache-dir -r /app/requirements.txt
 
 # Copy app project ('/backend') into container
 COPY . /app
