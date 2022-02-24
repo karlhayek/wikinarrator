@@ -1,4 +1,5 @@
 import re
+import urllib
 import mwparserfromhell
 
 def get_first_keyword_position(text: str, keywords: [str], after_keyword=False) -> int:
@@ -55,7 +56,7 @@ def clean_text(wiki_text: str):
 
     # Remove items
     remove_list = [
-        " (en)", "[réf. nécessaire]", "[Lequel ?]", "[Lesquel ?]", "[Quoi ?],", "[pas clair]", "[réf. souhaitée]"
+        " (en)", "(en) ", "[réf. nécessaire]", "[Lequel ?]", "[Lesquel ?]", "[Quoi ?],", "[pas clair]", "[réf. souhaitée]"
     ]
     for item_to_remove in remove_list:
         cleaned_text = cleaned_text.replace(item_to_remove, "")
@@ -76,3 +77,23 @@ def clean_text(wiki_text: str):
 
     return cleaned_text
 
+
+
+def extract_title_from_url(url: str) -> str:
+    """ Extracts wikipedia article title from a URL. Example: "https://fr.wikipedia.org/wiki/Hedy_Lamarr" returns "Hedy_Lamarr" """
+    # Extract title from the URL using a regex
+    # ex: from "https://fr.wikipedia.org/wiki/Grandes_d%C3%A9couvertes#Contexte" we get "Grandes_d%C3%A9couvertes#Contexte"
+    regex = r"(?<=https:\/\/\S\S\.wikipedia\.org\/wiki.)\S+[^#]$"
+
+    matches = re.findall(regex, url)
+    if len(matches) == 0:
+        # raise Exception("URL is invalid ! Make sure it is a valid wikipedia article URL")
+        return ""
+    
+    # Sanitize title extracted from the URL
+    title = urllib.parse.unquote(matches[0], encoding='utf-8', errors='replace')
+
+    # Remove possible '#' suffix to the URl (ex: from a wiki section)
+    title = title.split('#')[0]
+
+    return title

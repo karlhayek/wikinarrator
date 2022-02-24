@@ -5,9 +5,7 @@ import axios from "axios";
 
 
 let count = ref(0);
-const pageLink = ref("");
-const pageTitle = ref("");
-let urlSelected = ref(false);
+const pageTitleOrUrl = ref("");
 let titleSelected = ref(false);
 
 let articleText = ref("");
@@ -19,21 +17,12 @@ function increment() {
 
 function selectTitleInput() {
   titleSelected.value = true
-  urlSelected.value = false
-}
-function selectURLInput() {
-  urlSelected.value = true
-  titleSelected.value = false
 }
 
 async function onSubmit() {
   var pageInfo = ""
-  if (urlSelected.value) {
-    pageInfo = pageLink.value
-  }
-  else if (titleSelected.value) {
-    pageInfo = pageTitle.value
-  }
+
+  pageInfo = pageTitleOrUrl.value
 
   // console.log("Retrieving article content for page " + pageInfo)
 
@@ -42,7 +31,7 @@ async function onSubmit() {
 
   axios
     .post("/api/getarticlecontent", {
-      title: pageInfo
+      article_title_or_url: pageInfo
     })
     .then((res) => {
       var pageContent = res["data"]['page_content']
@@ -64,38 +53,27 @@ async function onSubmit() {
       <!-- <button :disabled="isButtonDisabled" v-on:click="increment">{{ count }}</button> -->
       <br />Enter the wikipedia article you wish to retrieve:
       <b-form @submit="onSubmit">
-        <b-input-group prepend="URL" class="mt-2 mb-1">
+        <b-input-group prepend="Title or URL" class="mt-2 mb-1">
           <b-form-input
-            class="shadow-none"
-            :class="{ 'border-primary': urlSelected }"
-            v-model="pageLink"
-            type="url"
-            placeholder="Enter article url"
-            @click="selectURLInput"
-            :required="urlSelected"
-          ></b-form-input>
-        </b-input-group>or
-        <b-input-group prepend="Title" class="mt-2 mb-1">
-          <b-form-input
-            v-model="pageTitle"
+            v-model="pageTitleOrUrl"
             class="shadow-none"
             :class="{ 'border-primary': titleSelected }"
             type="text"
-            placeholder="Enter article title"
+            placeholder="Enter article title or URL"
             @click="selectTitleInput"
-            :required="titleSelected"
+            :required="true"
           ></b-form-input>
         </b-input-group>
 
         <b-button
           type="submit"
           variant="primary"
-          class="mt-3 mb-5"
-          :disabled="(urlSelected || titleSelected) == false"
-        >Submit</b-button>
+          class="mt-3 mb-4"
+          :disabled="titleSelected == false"
+        >Get text</b-button>
       </b-form>
 
-      <b-form-textarea v-if="articleText != ''" v-model="articleText" rows="16" max-rows="30"></b-form-textarea>
+      <b-form-textarea v-if="articleText != ''" v-model="articleText" rows="18" max-rows="30"></b-form-textarea>
     </div>
   </main>
 </template>
