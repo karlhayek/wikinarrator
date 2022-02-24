@@ -1,6 +1,7 @@
 import re
 import urllib
-import mwparserfromhell
+from bs4 import BeautifulSoup
+
 
 def get_first_keyword_position(text: str, keywords: [str], after_keyword=False) -> int:
     """ Gets position of the first found keyword in a text from a list of keywords
@@ -41,25 +42,25 @@ def replace_bullet_points(input_text: str):
     return new_text
 
 
-def clean_text(wiki_text: str):
-    # Wiki text processing
-    # # Replace bullet points/lists with numbers 
-    # wiki_text = replace_bullet_points(wiki_text)
+def clean_text(text: str):
+    cleaned_text = text
 
-    # # Convert wikitext to plain text
-    # plain_text = mwparserfromhell.parse(wiki_text).strip_code()
+    # Replace bullet points/lists with numbers 
+    # cleaned_text = replace_bullet_points(cleaned_text)
 
-    # Post-processing on the text converted from wikitext
-    # cleaned_text = plain_text
-    cleaned_text = wiki_text
-
-
-    # Remove items
+    # Remove items. Remove all text between brackets ? 
     remove_list = [
-        " (en)", "(en) ", "[réf. nécessaire]", "[Lequel ?]", "[Lesquel ?]", "[Quoi ?],", "[pas clair]", "[réf. souhaitée]"
+        " (en)", "(en) ", "(en)", "[Lequel ?]", "[Lesquel ?]", "[Quoi ?],", "[pas clair]", "[Qui ?]"
+    ]
+    remove_list_regex = [
+        # strings starting with "[ref. ]" or "[source ]""
+        r"\[réf\..+\]", r"\[source.+\]"
     ]
     for item_to_remove in remove_list:
         cleaned_text = cleaned_text.replace(item_to_remove, "")
+    for regex in remove_list_regex:
+        cleaned_text = re.sub(regex, "", cleaned_text)
+
 
     # Replace items
     replace_list = {
@@ -97,3 +98,30 @@ def extract_title_from_url(url: str) -> str:
     title = title.split('#')[0]
 
     return title
+
+
+def edit_and_convert_html_text(html_text: str) -> str:
+    soup = BeautifulSoup(html_text, 'html.parser')
+
+    # Add "="'s in headers
+    for h2 in soup.find_all("h2"):
+        h2.insert_before("\n== ")
+        h2.insert_after(" ==\n")
+
+    for h3 in soup.find_all("h3"):
+        h3.insert_before("\n=== ")
+        h3.insert_after(" ===\n")
+
+    for h4 in soup.find_all("h4"):
+        h4.insert_before("\n==== ")
+        h4.insert_after(" ====")
+
+    # Insert "- " in the beginning of list items
+    for li in soup.find_all("li"):
+        li.insert_before("- ")
+
+    # Append a newline after lists (because conversion from html destroys them for some reason)
+    for li in soup.find_all("ul"):
+        li.append("\n")
+    
+    return soup.get_text()
