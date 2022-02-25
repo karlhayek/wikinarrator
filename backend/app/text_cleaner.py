@@ -42,7 +42,7 @@ def replace_bullet_points(input_text: str):
     return new_text
 
 
-def clean_text(text: str):
+def clean_text(text: str) -> str:
     cleaned_text = text
 
     # Replace bullet points/lists with numbers 
@@ -62,21 +62,42 @@ def clean_text(text: str):
         cleaned_text = re.sub(regex, "", cleaned_text)
 
 
-    # Replace items
-    replace_list = {
-        "(": ", ",
-        ")": ", "
-    }
-    for to_replace, replacer in replace_list.items():
-        cleaned_text = cleaned_text.replace(to_replace, replacer)
-
-    
     # Remove text at the end of the article (annexes, bibliographies etc.)
-    end_pos = get_first_keyword_position(cleaned_text, ['== Annexes ==', '== Bibliographie ==', '== Notes et références ==', '== Voir aussi =='])
+    end_sections_to_stop_at = [
+        '== Annexes ==', '== Bibliographie ==', '== Notes et références ==', '== Voir aussi ==',
+        '== Œuvres ==', '== Publications ==' ##
+    ]
+
+    end_pos = get_first_keyword_position(cleaned_text, end_sections_to_stop_at)
     if end_pos != -1:
         cleaned_text = cleaned_text[:end_pos]
 
     return cleaned_text
+
+
+def prepare_text_for_TTS(text: str) -> str:
+    """ Prepare text for TTS, removing / replacing characters that are mispronounced by TTS """
+    # Replace abbreviations
+    abbreviations_list = {
+        "av. J.-C": "avant Jésus Christ",
+    }
+    for to_replace, replacer in abbreviations_list.items():
+        text = text.replace(to_replace, replacer)
+
+    replace_list = {
+        " (": ", ",                     # Replace parentheses with comas
+        ") ": ", ",
+    }
+    replace_list_regex = {
+        r"Mc(?=[A-Z][a-z]+)": "Mac",    # McGellan -> MacGellan
+        r"(?!\d+)\/(?=\d+)":  " sur ",  # nombres séparés par '/'
+    }
+    for to_replace, replacer in replace_list.items():
+        text = text.replace(to_replace, replacer)
+    for regex_to_replace, replacer in replace_list_regex.items():
+        text = re.sub(regex_to_replace, replacer, text)
+    
+    return text
 
 
 
@@ -101,6 +122,9 @@ def extract_title_from_url(url: str) -> str:
 
 
 def edit_and_convert_html_text(html_text: str) -> str:
+    # These tags should be new lines. These tags are usually used in citations and sometimes in lists
+    html_text = html_text.replace("</dd></dl></dd></dl>", "\n</dd></dl></dd></dl>\n")
+
     soup = BeautifulSoup(html_text, 'html.parser')
 
     # Add "="'s in headers
@@ -124,4 +148,8 @@ def edit_and_convert_html_text(html_text: str) -> str:
     for li in soup.find_all("ul"):
         li.append("\n")
     
+    # Remove dangling ',' when words have multiple references
+    for sup in soup.find_all("sup", attrs="reference cite_virgule"):
+        sup.string = ""
+
     return soup.get_text()

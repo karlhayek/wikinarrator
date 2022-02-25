@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from mediawiki import MediaWiki
 import wikipediaapi
 
-from text_cleaner import edit_and_convert_html_text, clean_text, extract_title_from_url
+from text_cleaner import edit_and_convert_html_text, clean_text, extract_title_from_url, prepare_text_for_TTS
 
 app = FastAPI(version='0.1', title='Wiki Narrator')
 
@@ -57,8 +57,11 @@ async def get_article_content_from_title(article_info: ArticleInfo):
     # Edit and convert retrieved html text to plaintext
     cleaned_page_text = edit_and_convert_html_text(page.text)
     
-    # Clean text
+    # Clean text, removing/replacing wiki texts
     cleaned_page_text = clean_text(cleaned_page_text)
+
+    # Edit text to prepare for TTS 
+    cleaned_page_text = prepare_text_for_TTS(cleaned_page_text)
 
     # Return the cleaned page text
     return {"page_content": cleaned_page_text}
