@@ -53,9 +53,8 @@ def clean_text(text: str) -> str:
         " (en)", "(en) ", "(en)", "[Lequel ?]", "[Lesquel ?]", "[Quoi ?],", "[pas clair]", "[Qui ?]"
     ]
     remove_list_regex = [
-        # strings starting with "[ref. ]" or "[source ]""
-        r"\[réf\..+\]", r"\[source.+\]",
-        r"\(\d\d?\)",                    # 2 chiffres entre parenthèses
+        r"\[réf\..+\]", r"\[source.+\]", # Strings starting with "[ref. ]" or "[source ]""
+        r"\(\d\d?\)",                    # 2 numbers between parentheses (e.g. '(12)')
     ]
     for item_to_remove in remove_list:
         cleaned_text = cleaned_text.replace(item_to_remove, "")
@@ -68,7 +67,6 @@ def clean_text(text: str) -> str:
         '== Annexes ==', '== Bibliographie ==', '== Notes et références ==', '== Voir aussi ==',
         '== Œuvres ==', '== Publications ==' ##
     ]
-
     end_pos = get_first_keyword_position(cleaned_text, end_sections_to_stop_at)
     if end_pos != -1:
         cleaned_text = cleaned_text[:end_pos]
@@ -149,8 +147,27 @@ def edit_and_convert_html_text(html_text: str) -> str:
     for li in soup.find_all("ul"):
         li.append("\n")
     
+    # Insert the list item number before each item in a ordered list (e.g. "1. ..., 2. ...")
+    for ol in soup.find_all("ol"):
+        item_number = 1
+        for li in ol.find_all("li"):
+            li.insert_before(f"{item_number}. ")
+            item_number += 1
+
     # Remove dangling ',' when words have multiple references
     for sup in soup.find_all("sup", attrs="reference cite_virgule"):
         sup.string = ""
 
     return soup.get_text()
+
+
+
+def clean_page_text(page_text: str) -> str:
+    # Edit and convert retrieved html text to plaintext
+    cleaned_page_text = edit_and_convert_html_text(page_text)
+
+    # Clean text, removing/replacing wiki markdown
+    cleaned_page_text = clean_text(cleaned_page_text)
+
+    # Edit text to prepare for TTS 
+    return prepare_text_for_TTS(cleaned_page_text)
