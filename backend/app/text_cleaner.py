@@ -54,7 +54,8 @@ def clean_text(text: str) -> str:
     ]
     remove_list_regex = [
         # strings starting with "[ref. ]" or "[source ]""
-        r"\[réf\..+\]", r"\[source.+\]"
+        r"\[réf\..+\]", r"\[source.+\]",
+        r"\(\d\d?\)",                    # 2 chiffres entre parenthèses
     ]
     for item_to_remove in remove_list:
         cleaned_text = cleaned_text.replace(item_to_remove, "")
@@ -90,7 +91,7 @@ def prepare_text_for_TTS(text: str) -> str:
     }
     replace_list_regex = {
         r"Mc(?=[A-Z][a-z]+)": "Mac",    # McGellan -> MacGellan
-        r"(?!\d+)\/(?=\d+)":  " sur ",  # nombres séparés par '/'
+        # r"(?!\d+)\/(?=\d+)":  " sur ",  # nombres séparés par '/'
     }
     for to_replace, replacer in replace_list.items():
         text = text.replace(to_replace, replacer)
