@@ -86,6 +86,10 @@ def prepare_text_for_TTS(text: str) -> str:
     replace_list = {
         " (": ", ",                     # Replace parentheses with comas
         ") ": ", ",
+        " mais ": ", mais ",            # Add comas before these words, to give an additional pause to the TTS
+        " donc ": ", donc ",
+        " or ": ", or ",
+        " car ": ", car ",
     }
     replace_list_regex = {
         r"Mc(?=[A-Z][a-z]+)": "Mac",    # McGellan -> MacGellan
@@ -138,6 +142,10 @@ def edit_and_convert_html_text(html_text: str) -> str:
     for h4 in soup.find_all("h4"):
         h4.insert_before("\n==== ")
         h4.insert_after(" ====")
+
+    # Remove lists that are of the class "gallery" (list of images)
+    for ul in soup.select("ul.gallery"):
+        ul.extract()    # Remove tag
 
     # Insert "- " in the beginning of list items
     for li in soup.find_all("li"):
