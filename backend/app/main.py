@@ -32,12 +32,12 @@ async def get_article_content_from_title(article_info: ArticleInfo):
     title_or_url = article_info.article_title_or_url
 
     try:
-        # Process input, and extract from it the exact wiki page title 
+        # Process input, and extract from it the exact wiki page title by using the mediawiki API
         title = get_exact_title(title_or_url)
     except Exception:
         return {"page_content": "Error: No articles were found for the given string"}
 
-    # Retrieve wikipedia page content (in HTML format) using wikipedia-api package
+    # Retrieve wikipedia page content (in HTML format) using wikipedia-api package (which needs the exact title)
     page = wiki_wiki.page(title)
 
     # Convert HTML to text, clean it and prepare it for TTS
