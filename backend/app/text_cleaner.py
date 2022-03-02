@@ -84,22 +84,30 @@ def prepare_text_for_TTS(text: str) -> str:
         text = text.replace(to_replace, replacer)
 
     replace_list = {
-        " (": ", ",                     # Replace parentheses with comas
-        ") ": ", ",
-        " mais ": ", mais ",            # Add comas before these words, to give an additional pause to the TTS
-        " donc ": ", donc ",
-        " or ": ", or ",
-        " car ": ", car ",
+        # " (": ", ",                     # Replace parentheses with comas
+        # ") ": ", ",
     }
     replace_list_regex = {
         r"Mc(?=[A-Z][a-z]+)": "Mac",    # McGellan -> MacGellan
         # r"(?!\d+)\/(?=\d+)":  " sur ",  # nombres séparés par '/'
+        r" \(.+\)(?! \=\=)": "",    # Texte between parentheses that isn't a title (doesn't end with at '==')
     }
     for to_replace, replacer in replace_list.items():
         text = text.replace(to_replace, replacer)
     for regex_to_replace, replacer in replace_list_regex.items():
         text = re.sub(regex_to_replace, replacer, text)
     
+
+    # Add comas before these words, to give an additional pause to the TTS
+    add_coma_before_list = [
+        "mais", "donc", "or", "car", "lesquels", "lesquelles", "laquelle", "lequel", "ou"
+    ]
+    for word in add_coma_before_list:
+        text = text.replace(f" {word} ", f", {word} ")
+
+    # Remove duplicate comas
+    text = text.replace(",, ", ", ")
+
     return text
 
 

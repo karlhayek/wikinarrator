@@ -1,6 +1,4 @@
-# FastAPI
 fastapi==0.73.0
-python-multipart==0.0.5
 uvicorn[standard]==0.17.4
 watchgod==0.7
 httpx==0.22.0
