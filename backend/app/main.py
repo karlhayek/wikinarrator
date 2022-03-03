@@ -28,6 +28,15 @@ class ArticleInfo(BaseModel):
 
 @app.post("/api/getarticlecontent")
 async def get_article_content_from_title(article_info: ArticleInfo):
+    """ Retrieves Wikipedia page text from a given URL or title. Uses the Wikimedia API to retrieve the text, and cleans and processes
+    the generated text in preparation for being sent to a TTS service. The title doesn't have to be exact, as this function searches the input title and returns the first matching page.
+
+    Args:
+        article_info (ArticleInfo): Form data that contains an 'article_title_or_url' field, which is a string that represents either a Wikipedia page title or URL
+
+    Returns:
+        PageResponse: Cleaned and processed page plaintext
+    """
     # Get form data
     title_or_url = article_info.article_title_or_url
 

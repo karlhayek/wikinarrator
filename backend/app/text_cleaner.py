@@ -3,46 +3,55 @@ import urllib
 from bs4 import BeautifulSoup
 
 
-def get_first_keyword_position(text: str, keywords: [str], after_keyword=False) -> int:
-    """ Gets position of the first found keyword in a text from a list of keywords
-    Arguments:
-        text {str} -- Text where search should be done
-        keywords {[str]} -- List of keywords to search
-        after_keyword {bool} -- Whether to return the position after or before the keyword (default: {False})
-    Returns:
-        int -- Position of the first found keyword in the text. Returns -1 if no keyword was found
-    """
-    keyword_positions = [(keyword_pos, keyword) for keyword in keywords if (
-        keyword_pos := text.find(keyword)) > -1]
+def edit_and_convert_html_text(html_text: str) -> str:
+    """ From given html text, clean and process the text and return it converted to HTML """
 
-    if len(keyword_positions) == 0:
-        return -1
+    # These tags should be new lines. These tags are usually used in citations and sometimes in lists
+    html_text = html_text.replace("</dd></dl></dd></dl>", "\n</dd></dl></dd></dl>\n")
 
-    min_keyword_pos, min_keyword = min(keyword_positions)
+    soup = BeautifulSoup(html_text, 'html.parser')
 
-    return min_keyword_pos + len(min_keyword) if after_keyword else min_keyword_pos
+    # Add "="'s in headers
+    for h2 in soup.find_all("h2"):
+        h2.insert_before("\n== ")
+        h2.insert_after(" ==\n")
 
+    for h3 in soup.find_all("h3"):
+        h3.insert_before("\n=== ")
+        h3.insert_after(" ===\n")
 
-def replace_bullet_points(input_text: str):
-    """ Replaces bullet points ('\n* [text]') in text with numbers ('1. ', etc.) """
+    for h4 in soup.find_all("h4"):
+        h4.insert_before("\n==== ")
+        h4.insert_after(" ====")
 
-    new_text = ""
-    bullet_point_number = 1
-    last_pos = 0
+    # Remove lists that are of the class "gallery" (list of images)
+    for ul in soup.select("ul.gallery"):
+        ul.extract()    # Remove tag
+
+    # Insert "- " in the beginning of list items
+    for li in soup.find_all("li"):
+        li.insert_before("- ")
+
+    # Append a newline after lists (because conversion from html destroys them for some reason)
+    for li in soup.find_all("ul"):
+        li.append("\n")
     
-    for m in re.finditer(r"(?<=(\n\*)) .+", input_text):
-        replace_string = f"{bullet_point_number}." +  m.group()
-        new_text += input_text[last_pos:m.start()-1] + replace_string
-        
-        last_pos = m.end()
-        bullet_point_number += 1
+    # Insert the list item number before each item in a ordered list (e.g. "1. ..., 2. ...")
+    for ol in soup.find_all("ol"):
+        item_number = 1
+        for li in ol.find_all("li"):
+            li.insert_before(f"{item_number}. ")
+            item_number += 1
 
-    new_text += input_text[last_pos:]
+    # Remove dangling ',' when words have multiple references
+    for sup in soup.find_all("sup", attrs="reference cite_virgule"):
+        sup.string = ""
 
-    return new_text
+    return soup.get_text()
 
 
 def clean_text(text: str) -> str:
+    """ Remove parts of the cleaned page Wikipedia text that we don't need """
     cleaned_text = text
 
     # Replace bullet points/lists with numbers 
@@ -54,7 +63,7 @@ def clean_text(text: str) -> str:
     ]
     remove_list_regex = [
         r"\[réf\..+\]", r"\[source.+\]", # Strings starting with "[ref. ]" or "[source ]""
-        r"\(\d\d?\)",                    # 2 numbers between parentheses (e.g. '(12)')
+        r"\(\d\d?\)",                    # 2 numbers between parentheses (e.g. '(12)' for references to images)
     ]
     for item_to_remove in remove_list:
         cleaned_text = cleaned_text.replace(item_to_remove, "")
@@ -75,7 +84,9 @@ def clean_text(text: str) -> str:
 
 
 def prepare_text_for_TTS(text: str) -> str:
-    """ Prepare text for TTS, removing / replacing characters that are mispronounced by TTS """
+    """ Prepare text for TTS, removing / replacing characters that are mispronounced by TTS, and adding comas
+    to parts of the text to add pauses. """
+
     # Replace abbreviations
     abbreviations_list = {
         "av. J.-C": "avant Jésus Christ",
@@ -121,6 +132,27 @@ def prepare_text_for_TTS(text: str) -> str:
 
 
 
+def clean_page_text(page_text_html: str) -> str:
+    """ Cleans and edits the given wikipedia page HTML and converts it to plaintext.
+    Then, edit the text to prepare for TTS.
+
+    Args:
+        page_text_html (str): Wikipedia page content in HTML format
+
+    Returns:
+        str: Cleaned page text prepared for TTS
+    """
+    # Edit and convert retrieved html text to plaintext
+    cleaned_page_text = edit_and_convert_html_text(page_text_html)
+
+    # Clean text, removing/replacing wiki markdown
+    cleaned_page_text = clean_text(cleaned_page_text)
+
+    # Edit text to prepare for TTS 
+    return prepare_text_for_TTS(cleaned_page_text)
+
+
+
 def extract_title_from_url(url: str) -> str:
     """ Extracts wikipedia article title from a URL. Example: "https://fr.wikipedia.org/wiki/Hedy_Lamarr" returns "Hedy_Lamarr" """
     # Extract title from the URL using a regex
@@ -141,58 +173,41 @@ def extract_title_from_url(url: str) -> str:
     return title
 
 
-def edit_and_convert_html_text(html_text: str) -> str:
-    # These tags should be new lines. These tags are usually used in citations and sometimes in lists
-    html_text = html_text.replace("</dd></dl></dd></dl>", "\n</dd></dl></dd></dl>\n")
 
-    soup = BeautifulSoup(html_text, 'html.parser')
+def get_first_keyword_position(text: str, keywords: [str], after_keyword=False) -> int:
+    """ Gets position of the first found keyword in a text from a list of keywords
+    Arguments:
+        text {str} -- Text where search should be done
+        keywords {[str]} -- List of keywords to search
+        after_keyword {bool} -- Whether to return the position after or before the keyword (default: {False})
+    Returns:
+        int -- Position of the first found keyword in the text. Returns -1 if no keyword was found
+    """
+    keyword_positions = [(keyword_pos, keyword) for keyword in keywords if (
+        keyword_pos := text.find(keyword)) > -1]
 
-    # Add "="'s in headers
-    for h2 in soup.find_all("h2"):
-        h2.insert_before("\n== ")
-        h2.insert_after(" ==\n")
+    if len(keyword_positions) == 0:
+        return -1
 
-    for h3 in soup.find_all("h3"):
-        h3.insert_before("\n=== ")
-        h3.insert_after(" ===\n")
+    min_keyword_pos, min_keyword = min(keyword_positions)
 
-    for h4 in soup.find_all("h4"):
-        h4.insert_before("\n==== ")
-        h4.insert_after(" ====")
+    return min_keyword_pos + len(min_keyword) if after_keyword else min_keyword_pos
 
-    # Remove lists that are of the class "gallery" (list of images)
-    for ul in soup.select("ul.gallery"):
-        ul.extract()    # Remove tag
 
-    # Insert "- " in the beginning of list items
-    for li in soup.find_all("li"):
-        li.insert_before("- ")
+def replace_bullet_points(input_text: str):
+    """ Replaces bullet points ('\n* [text]') in text with numbers ('1. ', etc.) """
 
-    # Append a newline after lists (because conversion from html destroys them for some reason)
-    for li in soup.find_all("ul"):
-        li.append("\n")
+    new_text = ""
+    bullet_point_number = 1
+    last_pos = 0
     
-    # Insert the list item number before each item in a ordered list (e.g. "1. ..., 2. ...")
-    for ol in soup.find_all("ol"):
-        item_number = 1
-        for li in ol.find_all("li"):
-            li.insert_before(f"{item_number}. ")
-            item_number += 1
+    for m in re.finditer(r"(?<=(\n\*)) .+", input_text):
+        replace_string = f"{bullet_point_number}." +  m.group()
+        new_text += input_text[last_pos:m.start()-1] + replace_string
+        
+        last_pos = m.end()
+        bullet_point_number += 1
 
-    # Remove dangling ',' when words have multiple references
-    for sup in soup.find_all("sup", attrs="reference cite_virgule"):
-        sup.string = ""
+    new_text += input_text[last_pos:]
 
-    return soup.get_text()
-
-
-
-def clean_page_text(page_text: str) -> str:
-    # Edit and convert retrieved html text to plaintext
-    cleaned_page_text = edit_and_convert_html_text(page_text)
-
-    # Clean text, removing/replacing wiki markdown
-    cleaned_page_text = clean_text(cleaned_page_text)
-
-    # Edit text to prepare for TTS 
-    return prepare_text_for_TTS(cleaned_page_text)
+    return new_text
