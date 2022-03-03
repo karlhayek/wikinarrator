@@ -88,9 +88,10 @@ def prepare_text_for_TTS(text: str) -> str:
         # ") ": ", ",
     }
     replace_list_regex = {
-        r"Mc(?=[A-Z][a-z]+)": "Mac",    # McGellan -> MacGellan
-        # r"(?!\d+)\/(?=\d+)":  " sur ",  # nombres séparés par '/'
-        r" \(.+\)(?! \=\=)": "",    # Texte between parentheses that isn't a title (doesn't end with at '==')
+        r"Mc(?=[A-Z][a-z]+)": "Mac",        # McGellan -> MacGellan
+        # r"(?!\d+)\/(?=\d+)":  " sur ",    # nombres séparés par '/'
+        r" \(.+?\)(?! \=\=)": "",           # Texte between parentheses that isn't a title (doesn't end with at '==')
+        r"(?<=[1-2]\d\d\d) ": ", "          # Add a coma after a 4-number date
     }
     for to_replace, replacer in replace_list.items():
         text = text.replace(to_replace, replacer)
@@ -100,13 +101,21 @@ def prepare_text_for_TTS(text: str) -> str:
 
     # Add comas before these words, to give an additional pause to the TTS
     add_coma_before_list = [
-        "mais", "donc", "or", "car", "lesquels", "lesquelles", "laquelle", "lequel", "ou"
+        "mais", "donc", "or", "car", "ou", "parce que"
     ]
     for word in add_coma_before_list:
         text = text.replace(f" {word} ", f", {word} ")
+    
+    # Add comas before the word preceding these words, to give an additional pause to the TTS
+    add_coma_before_prefix_list = [
+        "lequel", "laquelle", "lesquels", "lesquelles", 
+    ]
+    for word in add_coma_before_prefix_list:
+        text = re.sub(rf" (?=\S+? {word})", ", ", text)
 
-    # Remove duplicate comas
-    text = text.replace(",, ", ", ")
+
+    # Remove duplicate comas and remove spaces at the beginning and end
+    text = text.replace(",, ", ", ").strip()
 
     return text
 
