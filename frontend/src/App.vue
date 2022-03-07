@@ -1,15 +1,25 @@
+
 <script setup lang="ts">
 import { ref } from 'vue';
+import type { Ref } from 'vue';
+import { onMounted } from 'vue'
+
 import NavBar from './components/NavBar.vue'
 import axios from "axios";
+
 
 
 const pageTitleOrUrl = ref("");
 let titleSelected = ref(false);
 let articleText = ref("");
 
-let articleTheme = ref("");
-let articleSubtheme = ref("");
+let articleTheme: Ref<string | undefined> = ref(undefined);
+let articleSubtheme: Ref<string | undefined> = ref(undefined);
+
+let themesToSubthemes: { [key: string]: [string] }
+
+let storyThemesSelect = ref([""])
+let storySubthemesSelect = ref([""])
 
 
 function selectTitleInput() {
@@ -25,7 +35,7 @@ async function retrieveArticleText() {
     return
 
   axios
-    .post("/api/getarticlecontent", {
+    .post("/api/wikipagetext", {
       article_title_or_url: pageInfo
     })
     .then((res) => {
@@ -35,10 +45,33 @@ async function retrieveArticleText() {
     .catch((error) => console.log(error));
 }
 
-async function sendText() {
-  console.log("Done boy")
+async function generateAudio() {
   console.log(articleTheme.value)
 }
+
+function getSubthemes() {
+  storySubthemesSelect.value = themesToSubthemes[String(articleTheme.value)]
+  articleSubtheme.value = undefined
+}
+
+// // Open subtheme select when theme is selected
+// function dropdownShouldOpen(VueSelect) {
+//   if (articleTheme.value) {
+//     console.log("opening drodown")
+//     return VueSelect.open
+//   }
+// }
+
+onMounted(() => {
+  axios
+    .get("/api/getthemesandsubthemes",)
+    .then((res) => {
+      // Unpack themes to subthemes mapping from response
+      themesToSubthemes = res["data"]['themes_to_subthemes']
+      storyThemesSelect.value = Object.keys(themesToSubthemes);
+    })
+    .catch((error) => console.log(error));
+})
 
 </script>
 
@@ -49,7 +82,7 @@ async function sendText() {
 
   <main>
     <div class="container">
-      <br />Enter the wikipedia article you wish to retrieve:
+      <br />
       <b-form @submit="retrieveArticleText">
         <b-input-group prepend="Title or URL" class="mt-2 mb-1">
           <b-form-input
@@ -57,7 +90,7 @@ async function sendText() {
             class="shadow-none"
             :class="{ 'border-primary': titleSelected }"
             type="text"
-            placeholder="Enter article title or URL"
+            placeholder="Enter Wikipedia page title or URL"
             @click="selectTitleInput"
             :required="true"
           ></b-form-input>
@@ -67,29 +100,36 @@ async function sendText() {
           type="submit"
           variant="outline-primary"
           class="mt-3 mb-4 shadow-none"
-          :disabled="titleSelected == false"
+          :disabled="!titleSelected"
         >Get text</b-button>
       </b-form>
 
       <b-form-textarea v-if="articleText != ''" v-model="articleText" rows="18" max-rows="30"></b-form-textarea>
 
-      <!-- <b-form @submit="sendText" class="row mt-4" v-if="articleText"> -->
       <div v-if="articleText">
         <div class="row mt-5">
-          <b-input-group prepend="Theme">
-            <b-form-input v-model="articleTheme" placeholder="Enter theme" :required="true"></b-form-input>
-          </b-input-group>
-
-          <b-input-group prepend="Subtheme">
-            <b-form-input v-model="articleSubtheme" placeholder="Enter subtheme" :required="true"></b-form-input>
-          </b-input-group>
+          <v-select
+            :options="storyThemesSelect"
+            default="Culture"
+            v-model="articleTheme"
+            placeholder="Enter theme"
+            append-to-body
+            @close="getSubthemes"
+          ></v-select>
+          <v-select
+            :options="storySubthemesSelect"
+            v-model="articleSubtheme"
+            :disabled="!articleTheme"
+            placeholder="Enter subtheme"
+          ></v-select>
         </div>
+
         <b-button
           variant="primary"
           class="shadow-none"
           style="float: right; margin-top: -40px;"
           :disabled="!(articleSubtheme && articleTheme && articleText)"
-          @click="sendText"
+          @click="generateAudio"
         >Generate audio</b-button>
       </div>
     </div>
@@ -108,14 +148,19 @@ async function sendText() {
   border-width: 1.5px;
 }
 
+.v-select {
+  /* max-width: 30em; */
+  width: 19em;
+}
 .row > * {
-  width: auto;
-  /* display: inline-block; */
-  /* margin-right: 10px; */
+  /* width: auto; */
+  display: inline-block;
+  margin-right: 2em;
+  height: auto;
 }
 
 .row {
-  /* display: flex;
-  justify-content: space-between; */
+  display: flex;
+  /* justify-content: space-between; */
 }
 </style>

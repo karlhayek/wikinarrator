@@ -2,6 +2,7 @@ from fastapi import FastAPI, Query, HTTPException
 from pydantic import BaseModel
 from mediawiki import MediaWiki
 import wikipediaapi
+import pandas as pd
 
 from text_cleaner import extract_title_from_url, clean_page_text
 
@@ -16,17 +17,26 @@ wiki_wiki = wikipediaapi.Wikipedia(
 )
 
 
+THEMES_DF = pd.read_csv("../data/themes_sous-themes.csv")
+
+# Themes to subthemes dict
+THEMES_TO_SUBTHEMES = {theme: sous_themes['Sous-thème'].to_list() for theme, sous_themes in THEMES_DF.groupby("Thème") }
+
+
 @app.get("/api")
 async def root():
-    return {"Wiki": "trivago"}
+    return {"Wiki": "API is a-okay"}
 
 
 class ArticleInfo(BaseModel):
     article_title_or_url: str
 
+class WikiPageResponse(BaseModel):
+    page_content: str
 
 
-@app.post("/api/getarticlecontent")
+
+@app.post("/api/wikipagetext", response_model=WikiPageResponse)
 async def get_article_content_from_title(article_info: ArticleInfo):
     """ Retrieves Wikipedia page text from a given URL or title. Uses the Wikimedia API to retrieve the text, and cleans and processes
     the generated text in preparation for being sent to a TTS service. The title doesn't have to be exact, as this function searches the input title and returns the first matching page.
@@ -54,6 +64,15 @@ async def get_article_content_from_title(article_info: ArticleInfo):
 
     # Return the cleaned page text
     return {"page_content": cleaned_page_text}
+
+
+class ThemesResponse(BaseModel):
+    themes_to_subthemes: dict[str, list[str]]
+
+
+@app.get("/api/getthemesandsubthemes", response_model=ThemesResponse)
+async def get_themes_and_subthemes():
+    return {"themes_to_subthemes": THEMES_TO_SUBTHEMES}
 
  
 
