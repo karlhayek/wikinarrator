@@ -3,52 +3,63 @@ import urllib
 from bs4 import BeautifulSoup
 
 
-def edit_and_convert_html_text(html_text: str) -> str:
-    """ From given html text, clean and process the text and return it converted to HTML """
 
-    # These tags should be new lines. These tags are usually used in citations and sometimes in lists
-    html_text = html_text.replace("</dd></dl></dd></dl>", "\n</dd></dl></dd></dl>\n")
+class HTMLCleaner():
+    def __init__(self, html_text: str):
+        # These tags should be new lines. These tags are usually used in citations and sometimes in lists
+        html_text = html_text.replace("</dd></dl></dd></dl>", "\n</dd></dl></dd></dl>\n")
 
-    soup = BeautifulSoup(html_text, 'html.parser')
+        self.soup = BeautifulSoup(html_text, 'html.parser')
+        self.cleaned_text: str = None
 
-    # Add "="'s in headers
-    for h2 in soup.find_all("h2"):
-        h2.insert_before("\n== ")
-        h2.insert_after(" ==\n")
+    def clean_and_convert(self) -> str:
+        """ From given html text, clean and process the text and return it converted to HTML """
 
-    for h3 in soup.find_all("h3"):
-        h3.insert_before("\n=== ")
-        h3.insert_after(" ===\n")
+        self.__clean_headers()
+        self.__remove_images_lists()
+        self.__correct_lists()
+        self.__remove_dangling_references()
 
-    for h4 in soup.find_all("h4"):
-        h4.insert_before("\n==== ")
-        h4.insert_after(" ====")
+        self.cleaned_text = self.soup.get_text()
+        return self.cleaned_text
 
-    # Remove lists that are of the class "gallery" (list of images)
-    for ul in soup.select("ul.gallery"):
-        ul.extract()    # Remove tag
 
-    # Insert "- " in the beginning of list items
-    for li in soup.find_all("li"):
-        li.insert_before("- ")
+    def __clean_headers(self):
+        # Add "="'s in headers
+        header_mappings = {"h2": "==","h3": "===","h4": "====",}
 
-    # Append a newline after lists (because conversion from html destroys them for some reason)
-    for li in soup.find_all("ul"):
-        li.append("\n")
+        for html_tag, separator in header_mappings.items():
+            for element in self.soup.find_all(html_tag):
+                element.insert_before(f"\n{separator} ")
+                element.insert_after(f" {separator}\n")
+
+    def __remove_images_lists(self):
+        # Remove lists that are of the class "gallery" (list of images)
+        for ul in self.soup.select("ul.gallery"):
+            ul.extract()    # Remove tag
+
+    def __correct_lists(self):
+        # Insert "- " in the beginning of list items
+        for li in self.soup.find_all("li"):
+            li.insert_before("- ")
+
+        # Append a newline after lists (because conversion from html destroys them for some reason)
+        for li in self.soup.find_all("ul"):
+            li.append("\n")
+
+        # Insert the list item number before each item in a ordered list (e.g. "1. ..., 2. ...")
+        for ol in self.soup.find_all("ol"):
+            item_number = 1
+            for li in ol.find_all("li"):
+                li.insert_before(f"{item_number}. ")
+                item_number += 1
+
+    def __remove_dangling_references(self):
+        # Remove dangling ',' when words have multiple url references
+        for sup in self.soup.find_all("sup", attrs="reference cite_virgule"):
+            sup.string = ""
+
     
-    # Insert the list item number before each item in a ordered list (e.g. "1. ..., 2. ...")
-    for ol in soup.find_all("ol"):
-        item_number = 1
-        for li in ol.find_all("li"):
-            li.insert_before(f"{item_number}. ")
-            item_number += 1
-
-    # Remove dangling ',' when words have multiple references
-    for sup in soup.find_all("sup", attrs="reference cite_virgule"):
-        sup.string = ""
-
-    return soup.get_text()
-
 
 def clean_text(text: str) -> str:
     """ Remove parts of the cleaned page Wikipedia text that we don't need """
@@ -101,7 +112,7 @@ def prepare_text_for_TTS(text: str) -> str:
     replace_list_regex = {
         r"Mc(?=[A-Z][a-z]+)": "Mac",        # McGellan -> MacGellan
         # r"(?!\d+)\/(?=\d+)":  " sur ",    # nombres séparés par '/'
-        r" \(.+?\)(?! \=\=)": "",           # Texte between parentheses that isn't a title (doesn't end with at '==')
+        # r" \(.+?\)(?! \=\=)": "",           # Texte between parentheses that isn't a title (doesn't end with at '==')
         r"(?<=[1-2]\d\d\d) ": ", "          # Add a coma after a 4-number date
     }
     for to_replace, replacer in replace_list.items():
@@ -143,7 +154,7 @@ def clean_page_text(page_text_html: str) -> str:
         str: Cleaned page text prepared for TTS
     """
     # Edit and convert retrieved html text to plaintext
-    cleaned_page_text = edit_and_convert_html_text(page_text_html)
+    cleaned_page_text = HTMLCleaner(page_text_html).clean_and_convert()
 
     # Clean text, removing/replacing wiki markdown
     cleaned_page_text = clean_text(cleaned_page_text)
