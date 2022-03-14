@@ -36,10 +36,7 @@ services:
       - 8888:8888 # Jupyter
     volumes:
       # 'cached' makes the host’s view of the mount authoritative, which reduces CPU load on macOS
-      - ./backend:/app:cached
-    environment:
-      # Environment variables
-      - JUPYTER=jupyter lab --ip=0.0.0.0 --allow-root --no-browser --NotebookApp.custom_display_url=http://127.0.0.1:8888 --notebook-dir /app
+      - ./backend:/backend:cached
 
     build:
       args:
@@ -52,4 +49,4 @@ services:
       - traefik.http.routers.backend.tls=false
 
     # Add '--reload' makes uvicorn reload when a file changes.
-    command: uvicorn main:app --reload --host 0.0.0.0 --port 8000
+    command: uvicorn main:app --reload --host 0.0.0.0 --port 8000 --app-dir ./app
