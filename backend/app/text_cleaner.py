@@ -1,7 +1,5 @@
 import re
-import urllib
 from bs4 import BeautifulSoup
-
 
 
 class HTMLCleaner():
@@ -14,13 +12,13 @@ class HTMLCleaner():
 
     def clean_and_convert(self) -> str:
         """ From given html text, clean and process the text and return it converted to HTML """
-
         self.__clean_headers()
         self.__remove_images_lists()
         self.__correct_lists()
         self.__remove_dangling_references()
 
         self.cleaned_text = self.soup.get_text()
+        
         return self.cleaned_text
 
 
@@ -162,26 +160,6 @@ def clean_page_text(page_text_html: str) -> str:
     # Edit text to prepare for TTS 
     return prepare_text_for_TTS(cleaned_page_text)
 
-
-
-def extract_title_from_url(url: str) -> str:
-    """ Extracts wikipedia article title from a URL. Example: "https://fr.wikipedia.org/wiki/Hedy_Lamarr" returns "Hedy_Lamarr" """
-    # Extract title from the URL using a regex
-    # ex: from "https://fr.wikipedia.org/wiki/Grandes_d%C3%A9couvertes#Contexte" we get "Grandes_d%C3%A9couvertes#Contexte"
-    regex = r"(?<=https:\/\/\S\S\.wikipedia\.org\/wiki.)\S+[^#]$"
-
-    matches = re.findall(regex, url)
-    if len(matches) == 0:
-        # raise Exception("URL is invalid ! Make sure it is a valid wikipedia article URL")
-        return ""
-    
-    # Sanitize title extracted from the URL
-    title = urllib.parse.unquote(matches[0], encoding='utf-8', errors='replace')
-
-    # Remove possible '#' suffix to the URl (ex: from a wiki section)
-    title = title.split('#')[0]
-
-    return title
 
 
 

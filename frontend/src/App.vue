@@ -35,7 +35,7 @@ async function retrieveArticleText() {
     return
 
   axios
-    .get("/api/article/" + titleOrUrl)
+    .get("/api/article/?title_or_url=" + titleOrUrl)
     .then((res) => {
       var pageContent = res["data"]['page_content']
       articleText.value = pageContent
