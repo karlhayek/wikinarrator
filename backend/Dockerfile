@@ -1,11 +1,14 @@
-FROM python:3.9-bullseye
+FROM python:3.9-slim-bullseye
 
 RUN mkdir -p /backend
 WORKDIR /backend
 
 # Install Python packages
-COPY requirements.txt ./requirements.txt
-RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
+RUN pip install poetry
+COPY poetry.lock ./pyproject.toml ./
+
+RUN poetry config virtualenvs.create false \
+    && poetry install --no-dev
 
 # Copy app project ('./backend') into container
 COPY ./ ./
