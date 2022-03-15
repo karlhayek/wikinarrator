@@ -27,22 +27,23 @@ function selectTitleInput() {
 }
 
 async function retrieveArticleText() {
-  var pageInfo = ""
+  var titleOrUrl = ""
 
-  pageInfo = pageTitleOrUrl.value
+  titleOrUrl = pageTitleOrUrl.value
 
-  if (pageInfo === "")
+  if (titleOrUrl === "")
     return
 
   axios
-    .post("/api/wikipagetext", {
-      article_title_or_url: pageInfo
-    })
+    .get("/api/article/" + titleOrUrl)
     .then((res) => {
       var pageContent = res["data"]['page_content']
       articleText.value = pageContent
     })
-    .catch((error) => console.log(error));
+    .catch((error) => {
+      console.log(error.response);
+      alert(error.response.data['detail'])
+    })
 }
 
 async function generateAudio() {
@@ -64,7 +65,7 @@ function getSubthemes() {
 
 onMounted(() => {
   axios
-    .get("/api/getthemesandsubthemes",)
+    .get("/api/themesandsubthemes",)
     .then((res) => {
       // Unpack themes to subthemes mapping from response
       themesToSubthemes = res["data"]['themes_to_subthemes']

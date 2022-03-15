@@ -1,63 +1,55 @@
 from fastapi import FastAPI, Query, HTTPException
 from pydantic import BaseModel
+import pandas as pd
 from mediawiki import MediaWiki
 import wikipediaapi
-import pandas as pd
 
 from text_cleaner import extract_title_from_url, clean_page_text
 
 app = FastAPI(version='0.1', title='Wiki Narrator')
 
-wiki = MediaWiki(lang="fr")
+WIKIPEDIA_SEARCH_API = MediaWiki(lang="fr")
 
-wiki_wiki = wikipediaapi.Wikipedia(
+WIKIPEDIA_API = wikipediaapi.Wikipedia(
     language='fr',
     extract_format=wikipediaapi.ExtractFormat.HTML
-    # extract_format=wikipediaapi.ExtractFormat.WIKI
 )
 
 
-THEMES_DF = pd.read_csv("../data/themes_sous-themes.csv")
+THEMES_DF = pd.read_csv("./data/themes_sous-themes.csv")
 
 # Themes to subthemes dict
 THEMES_TO_SUBTHEMES = {theme: sous_themes['Sous-thème'].to_list() for theme, sous_themes in THEMES_DF.groupby("Thème") }
 
 
 @app.get("/api")
-async def root():
+def root():
     return {"Wiki": "API is a-okay"}
-
-
-class ArticleInfo(BaseModel):
-    article_title_or_url: str
 
 class WikiPageResponse(BaseModel):
     page_content: str
 
 
 
-@app.post("/api/wikipagetext", response_model=WikiPageResponse)
-async def get_article_content_from_title(article_info: ArticleInfo):
+@app.get("/api/article/{title_or_url}", response_model=WikiPageResponse)
+def get_article_content_from_title(title_or_url: str):
     """ Retrieves Wikipedia page text from a given URL or title. Uses the Wikimedia API to retrieve the text, and cleans and processes
     the generated text in preparation for being sent to a TTS service. The title doesn't have to be exact, as this function searches the input title and returns the first matching page.
 
     Args:
-        article_info (ArticleInfo): Form data that contains an 'article_title_or_url' field, which is a string that represents either a Wikipedia page title or URL
+        title_or_url: str: Path paramether that represents either a Wikipedia page title or URL
 
     Returns:
         PageResponse: Cleaned and processed page plaintext
     """
-    # Get form data
-    title_or_url = article_info.article_title_or_url
-
     try:
         # Process input, and extract from it the exact wiki page title by using the mediawiki API
         title = get_exact_title(title_or_url)
     except Exception:
-        return {"page_content": "Error: No articles were found for the given string"}
+        raise HTTPException(status_code=404, detail="No article found for the given string")
 
     # Retrieve wikipedia page content (in HTML format) using wikipedia-api package (which needs the exact title)
-    page = wiki_wiki.page(title)
+    page = WIKIPEDIA_API.page(title)
 
     # Convert HTML to text, clean it and prepare it for TTS
     cleaned_page_text  = clean_page_text(page.text)
@@ -70,8 +62,8 @@ class ThemesResponse(BaseModel):
     themes_to_subthemes: dict[str, list[str]]
 
 
-@app.get("/api/getthemesandsubthemes", response_model=ThemesResponse)
-async def get_themes_and_subthemes():
+@app.get("/api/themesandsubthemes", response_model=ThemesResponse)
+def get_themes_and_subthemes():
     return {"themes_to_subthemes": THEMES_TO_SUBTHEMES}
 
  
@@ -85,7 +77,7 @@ def get_exact_title(title_or_url: str) -> str:
     else:
         # Search for title and get first match's url using mediawiki package
         url = ""
-        if len(search_results := wiki.opensearch(title_or_url)) == 0:
+        if len(search_results := WIKIPEDIA_SEARCH_API.opensearch(title_or_url)) == 0:
             raise Exception
     
         # Extract title from url
