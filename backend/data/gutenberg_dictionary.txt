@@ -111546,7 +111546,9 @@ docte
 doctement
 doctes
 docteur
+docteure
 docteurs
+docteures
 doctoral
 doctorale
 doctoralement

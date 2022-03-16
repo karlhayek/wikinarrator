@@ -179,10 +179,16 @@ onMounted(() => {
   /* justify-content: space-between; */
 }
 
-hl1 {
+hl_notfrench {
   color: red;
 }
-hl2 {
+hl_long {
   color: orange;
+}
+hl_quote {
+  color: brown;
+}
+hl_list {
+  color: green;
 }
 </style>
