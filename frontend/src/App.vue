@@ -105,7 +105,8 @@ onMounted(() => {
         >Get text</b-button>
       </b-form>
 
-      <b-form-textarea v-if="articleText != ''" v-model="articleText" rows="18" max-rows="30"></b-form-textarea>
+      <div id="fake_textarea" v-if="articleText != ''" v-html="articleText" contenteditable></div>
+      <!-- <b-form-textarea v-if="articleText != ''" v-model="articleText" rows="18" max-rows="30"></b-form-textarea> -->
 
       <div v-if="articleText">
         <div class="row mt-5">
@@ -145,6 +146,19 @@ onMounted(() => {
   color: #2c3e50;
 }
 
+#fake_textarea {
+  border: 1px solid rgba(146, 137, 137, 0.555);
+  white-space: pre;
+  white-space: pre-line;
+  height: 425px;
+  overflow: auto;
+  padding: 10px;
+  padding-left: 15px;
+  resize: vertical;
+  font-size: 15px;
+  color: black;
+  border-radius: 5px;
+}
 .shadow-none {
   border-width: 1.5px;
 }
@@ -163,5 +177,12 @@ onMounted(() => {
 .row {
   display: flex;
   /* justify-content: space-between; */
+}
+
+hl1 {
+  color: red;
+}
+hl2 {
+  color: orange;
 }
 </style>

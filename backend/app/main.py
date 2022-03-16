@@ -4,7 +4,7 @@ import pandas as pd
 import text_cleaner
 import wikipedia_api
 from response_models import *
-
+import text_highlighter
 
 app = FastAPI(version='0.2', title='Wiki Narrator')
 
@@ -42,10 +42,12 @@ def get_article_content_from_title(title_or_url: str):
     page = wikipedia_api.get_article_content(title)
 
     # Convert HTML to text, clean it and prepare it for TTS
-    cleaned_page_text  = text_cleaner.clean_page_text(page.text)
+    cleaned_page_text = text_cleaner.clean_page_text(page.text)
+
+    highlighted_text = text_highlighter.highlight_text(cleaned_page_text)
 
     # Return the cleaned page text
-    return {"page_content": cleaned_page_text}
+    return {"page_content": highlighted_text}
 
 
 @app.get("/api/themesandsubthemes", response_model=ThemesResponse)
