@@ -11,7 +11,7 @@ if not FRENCH_DICT.exists():    # Check in parent directory
 FRENCH_WORDS = set(FRENCH_DICT.read_text().splitlines())
 
 
-def highlight(text: str, html_tag: str, reg_expr: str, should_highlight= (lambda _: True)) -> str:
+def highlight(text: str, html_tag: str, reg_expr: re.Pattern, should_highlight= (lambda _: True)) -> str:
     """ Adds html tags to text based on the given regular expression and should_highlight function
     Args:
         text (str): Input text
@@ -27,7 +27,7 @@ def highlight(text: str, html_tag: str, reg_expr: str, should_highlight= (lambda
     offset = 0
     offset_increment = len(html_tag_start) + len(html_tag_end)
 
-    for match in re.finditer(reg_expr, text):
+    for match in reg_expr.finditer(text):
         start_pos, end_pos = match.start() + offset, match.end() + offset
 
         if should_highlight(match.group()):
@@ -52,17 +52,21 @@ def __is_long_sentence(sentence: str, len_treshold: int = 250) -> bool:
     return len(sentence) > len_treshold
 
 
+french_words_regex = re.compile(r"[A-Za-zÀ-ÖØ-öø-ÿœ]{3,}")
+sentence_regex = re.compile(r".+?[.!?\n]")
+quote_regex = re.compile(r"«.+?»")
+list_regex = re.compile(r"(?<=\n)- .+?\n")
 
 def highlight_text(text: str) -> str:
     """ Adds html tags to text for: non-french words; long sentences; sentences inside quotation marks, and lists """
 
     # Highlight non-french words
-    text = highlight(text, "hl_notfrench", r"[A-Za-zÀ-ÖØ-öø-ÿœ]{3,}", should_highlight=__is_not_french_word)
+    text = highlight(text, "hl_notfrench", french_words_regex, should_highlight=__is_not_french_word)
     # Highlight long sentences
-    text = highlight(text, "hl_long", r".+?[.!?\n]", should_highlight=__is_long_sentence)
+    text = highlight(text, "hl_long", sentence_regex, should_highlight=__is_long_sentence)
     # Highlight text inside quotation marks
-    text = highlight(text, "hl_quote", r"«.+?»")
+    text = highlight(text, "hl_quote", quote_regex)
     # Highlight text inside lists
-    text = highlight(text, "hl_list", r"(?<=\n)- .+?\n")
+    text = highlight(text, "hl_list", list_regex)
 
     return text

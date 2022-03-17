@@ -44,14 +44,13 @@ def get_article_content(title: str) -> str:
     return WIKIPEDIA_API.page(title)
 
 
+title_extract_regex = re.compile(r"(?<=https:\/\/\S\S\.wikipedia\.org\/wiki.)\S+[^#]$")
 
 def extract_title_from_url(url: str) -> str:
     """ Extracts wikipedia article title from a URL. Example: "https://fr.wikipedia.org/wiki/Hedy_Lamarr" returns "Hedy_Lamarr" """
     # Extract title from the URL using a regex
     # ex: from "https://fr.wikipedia.org/wiki/Grandes_d%C3%A9couvertes#Contexte" we get "Grandes_d%C3%A9couvertes#Contexte"
-    title_extract_regex = r"(?<=https:\/\/\S\S\.wikipedia\.org\/wiki.)\S+[^#]$"
-
-    matches = re.findall(title_extract_regex, url)
+    matches = title_extract_regex.findall(url)
     if len(matches) == 0:
         # raise Exception("URL is invalid ! Make sure it is a valid wikipedia article URL")
         return ""

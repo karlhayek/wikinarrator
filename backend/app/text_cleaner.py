@@ -22,7 +22,7 @@ class HTMLCleaner():
         return self.cleaned_text
 
 
-    def __clean_headers(self):
+    def __clean_headers(self) -> None:
         # Add "="'s in headers
         header_mappings = {"h2": "==","h3": "===","h4": "====",}
 
@@ -31,12 +31,12 @@ class HTMLCleaner():
                 element.insert_before(f"\n{separator} ")
                 element.insert_after(f" {separator}\n")
 
-    def __remove_images_lists(self):
+    def __remove_images_lists(self) -> None:
         # Remove lists that are of the class "gallery" (list of images)
         for ul in self.soup.select("ul.gallery"):
             ul.extract()    # Remove tag
 
-    def __correct_lists(self):
+    def __correct_lists(self) -> None:
         # Insert "- " in the beginning of list items
         for li in self.soup.find_all("li"):
             li.insert_before("- ")
@@ -52,32 +52,32 @@ class HTMLCleaner():
                 li.insert_before(f"{item_number}. ")
                 item_number += 1
 
-    def __remove_dangling_references(self):
+    def __remove_dangling_references(self) -> None:
         # Remove dangling ',' when words have multiple url references
         for sup in self.soup.find_all("sup", attrs="reference cite_virgule"):
             sup.string = ""
 
-    
 
-def clean_text(text: str) -> str:
+
+# Remove items. Remove all text between brackets ? 
+wiki_remove_list = [
+    " (en)", "(en) ", "(en)", "[Lequel ?]", "[Lesquel ?]", "[Quoi ?],", "[pas clair]", "[Qui ?]"
+]
+wiki_remove_list_regex = [
+    re.compile(r"\[réf\..+\]"),     # Strings starting with "[ref. ]" or "[source ]""
+    re.compile(r"\[source.+\]"),
+    re.compile(r"\(\d\d?\)"),       # 2 numbers between parentheses (e.g. '(12)' for references to images)
+]
+def purge_wiki_text(text: str) -> str:
     """ Remove parts of the cleaned page Wikipedia text that we don't need """
     cleaned_text = text
 
     # Replace bullet points/lists with numbers 
-    # cleaned_text = replace_bullet_points(cleaned_text)
-
-    # Remove items. Remove all text between brackets ? 
-    remove_list = [
-        " (en)", "(en) ", "(en)", "[Lequel ?]", "[Lesquel ?]", "[Quoi ?],", "[pas clair]", "[Qui ?]"
-    ]
-    remove_list_regex = [
-        r"\[réf\..+\]", r"\[source.+\]", # Strings starting with "[ref. ]" or "[source ]""
-        r"\(\d\d?\)",                    # 2 numbers between parentheses (e.g. '(12)' for references to images)
-    ]
-    for item_to_remove in remove_list:
+    # cleaned_text = replace_bullet_points(cleaned_text)=
+    for item_to_remove in wiki_remove_list:
         cleaned_text = cleaned_text.replace(item_to_remove, "")
-    for regex in remove_list_regex:
-        cleaned_text = re.sub(regex, "", cleaned_text)
+    for regex in wiki_remove_list_regex:
+        cleaned_text = regex.sub("", cleaned_text)
 
 
     # Remove text at the end of the article (annexes, bibliographies etc.)
@@ -92,6 +92,14 @@ def clean_text(text: str) -> str:
     return cleaned_text
 
 
+
+TTS_replace_list_regex = {
+    re.compile(r"Mc(?=[A-Z][a-z]+)"): "Mac",        # McGellan -> MacGellan
+    re.compile(r"(?!\d+)\/(?=\d+)"):  " sur ",    # nombres séparés par '/'
+    re.compile(r" \(.+?\)(?! \=\=)"): "",           # Texte between parentheses that isn't a title (doesn't end with at '==')
+    re.compile(r"(?<=[1-2]\d\d\d) "): ", "          # Add a coma after a 4-number date
+    }
+
 def prepare_text_for_TTS(text: str) -> str:
     """ Prepare text for TTS, removing / replacing characters that are mispronounced by TTS, and adding comas
     to parts of the text to add pauses. """
@@ -103,20 +111,14 @@ def prepare_text_for_TTS(text: str) -> str:
     for to_replace, replacer in abbreviations_list.items():
         text = text.replace(to_replace, replacer)
 
-    replace_list = {
+    TTS_replace_list = {
         # " (": ", ",                     # Replace parentheses with comas
         # ") ": ", ",
     }
-    replace_list_regex = {
-        r"Mc(?=[A-Z][a-z]+)": "Mac",        # McGellan -> MacGellan
-        # r"(?!\d+)\/(?=\d+)":  " sur ",    # nombres séparés par '/'
-        r" \(.+?\)(?! \=\=)": "",           # Texte between parentheses that isn't a title (doesn't end with at '==')
-        r"(?<=[1-2]\d\d\d) ": ", "          # Add a coma after a 4-number date
-    }
-    for to_replace, replacer in replace_list.items():
+    for to_replace, replacer in TTS_replace_list.items():
         text = text.replace(to_replace, replacer)
-    for regex_to_replace, replacer in replace_list_regex.items():
-        text = re.sub(regex_to_replace, replacer, text)
+    for regex_to_replace, replacer in TTS_replace_list_regex.items():
+        text = regex_to_replace.sub(replacer, text)
     
 
     # Add comas before these words, to give an additional pause to the TTS
@@ -143,19 +145,17 @@ def prepare_text_for_TTS(text: str) -> str:
 
 def clean_page_text(page_text_html: str) -> str:
     """ Cleans and edits the given wikipedia page HTML and converts it to plaintext.
-    Then, edit the text to prepare for TTS.
-
+    Then, edits the text to prepare for TTS.
     Args:
         page_text_html (str): Wikipedia page content in HTML format
-
     Returns:
         str: Cleaned page text prepared for TTS
     """
     # Edit and convert retrieved html text to plaintext
     cleaned_page_text = HTMLCleaner(page_text_html).clean_and_convert()
 
-    # Clean text, removing/replacing wiki markdown
-    cleaned_page_text = clean_text(cleaned_page_text)
+    # Clean text from wikitext remnants, removing/replacing wiki markdown
+    cleaned_page_text = purge_wiki_text(cleaned_page_text)
 
     # Edit text to prepare for TTS 
     return prepare_text_for_TTS(cleaned_page_text)
@@ -181,22 +181,3 @@ def get_first_keyword_position(text: str, keywords: [str], after_keyword=False) 
     min_keyword_pos, min_keyword = min(keyword_positions)
 
     return min_keyword_pos + len(min_keyword) if after_keyword else min_keyword_pos
-
-
-def replace_bullet_points(input_text: str):
-    """ Replaces bullet points ('\n* [text]') in text with numbers ('1. ', etc.) """
-
-    new_text = ""
-    bullet_point_number = 1
-    last_pos = 0
-    
-    for m in re.finditer(r"(?<=(\n\*)) .+", input_text):
-        replace_string = f"{bullet_point_number}." +  m.group()
-        new_text += input_text[last_pos:m.start()-1] + replace_string
-        
-        last_pos = m.end()
-        bullet_point_number += 1
-
-    new_text += input_text[last_pos:]
-
-    return new_text
