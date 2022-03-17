@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Query, HTTPException
 import csv
 from collections import defaultdict
+from functools import lru_cache
 
 import text_cleaner
 import wikipedia_api

@@ -1,5 +1,6 @@
 import re
 from pathlib import Path
+from functools import lru_cache
 import unidecode
 
 # 336531 French words. From https://github.com/chrplr/openlexicon/blob/master/datasets-info/Liste-de-mots-francais-Gutenberg,
@@ -47,7 +48,7 @@ def __is_not_french_word(word: str) -> bool:
     return False
 
 
-def __is_long_sentence(sentence: str, len_treshold: int = 250) -> bool:
+def __is_long_sentence(sentence: str, len_treshold: int = 200) -> bool:
     """ Checks if sentence length is above a given threshold """
     return len(sentence) > len_treshold
 
@@ -57,6 +58,7 @@ sentence_regex = re.compile(r".+?[.!?\n]")
 quote_regex = re.compile(r"«.+?»")
 list_regex = re.compile(r"(?<=\n)- .+?\n")
 
+@lru_cache(maxsize=20)
 def highlight_text(text: str) -> str:
     """ Adds html tags to text for: non-french words; long sentences; sentences inside quotation marks, and lists """
 

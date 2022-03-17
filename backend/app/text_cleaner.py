@@ -1,4 +1,5 @@
 import re
+from functools import lru_cache
 from bs4 import BeautifulSoup
 
 
@@ -142,7 +143,7 @@ def prepare_text_for_TTS(text: str) -> str:
     return text
 
 
-
+@lru_cache(maxsize=20)
 def clean_page_text(page_text_html: str) -> str:
     """ Cleans and edits the given wikipedia page HTML and converts it to plaintext.
     Then, edits the text to prepare for TTS.

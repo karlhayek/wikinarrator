@@ -1,5 +1,6 @@
 import re
 import urllib
+from functools import lru_cache
 from mediawiki import MediaWiki
 import wikipediaapi
 
@@ -12,7 +13,7 @@ WIKIPEDIA_API = wikipediaapi.Wikipedia(
     # extract_format=wikipediaapi.ExtractFormat.TEXT
 )
 
-
+@lru_cache(maxsize=20)
 def get_exact_title(title_or_url: str) -> str:
     # Because input is either a page title or a URL, try to extract title from the URL in the string
     if (url_extract := extract_title_from_url(title_or_url)) != "":
@@ -34,6 +35,7 @@ def get_exact_title(title_or_url: str) -> str:
     
     return title
 
+@lru_cache(maxsize=20)
 def get_article_content(title: str) -> str:
     """ Retrieves wikipedia page content (in HTML format) using wikipedia-api package (which needs the exact title)
     Args:
@@ -46,6 +48,7 @@ def get_article_content(title: str) -> str:
 
 title_extract_regex = re.compile(r"(?<=https:\/\/\S\S\.wikipedia\.org\/wiki.)\S+[^#]$")
 
+@lru_cache(maxsize=20)
 def extract_title_from_url(url: str) -> str:
     """ Extracts wikipedia article title from a URL. Example: "https://fr.wikipedia.org/wiki/Hedy_Lamarr" returns "Hedy_Lamarr" """
     # Extract title from the URL using a regex
