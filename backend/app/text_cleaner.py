@@ -110,7 +110,7 @@ def prepare_text_for_TTS(text: str) -> str:
     replace_list_regex = {
         r"Mc(?=[A-Z][a-z]+)": "Mac",        # McGellan -> MacGellan
         # r"(?!\d+)\/(?=\d+)":  " sur ",    # nombres séparés par '/'
-        # r" \(.+?\)(?! \=\=)": "",           # Texte between parentheses that isn't a title (doesn't end with at '==')
+        r" \(.+?\)(?! \=\=)": "",           # Texte between parentheses that isn't a title (doesn't end with at '==')
         r"(?<=[1-2]\d\d\d) ": ", "          # Add a coma after a 4-number date
     }
     for to_replace, replacer in replace_list.items():
