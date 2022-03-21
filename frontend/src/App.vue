@@ -12,6 +12,7 @@ import axios from "axios";
 const pageTitleOrUrl = ref("");
 let titleSelected = ref(false);
 let articleText = ref("");
+let showLegend = ref(false)
 
 let articleTheme: Ref<string | undefined> = ref(undefined);
 let articleSubtheme: Ref<string | undefined> = ref(undefined);
@@ -20,7 +21,6 @@ let themesToSubthemes: { [key: string]: [string] }
 
 let storyThemesSelect = ref([""])
 let storySubthemesSelect = ref([""])
-
 
 function selectTitleInput() {
   titleSelected.value = true
@@ -108,8 +108,29 @@ onMounted(() => {
       <div id="fake_textarea" v-if="articleText != ''" v-html="articleText" contenteditable></div>
       <!-- <b-form-textarea v-if="articleText != ''" v-model="articleText" rows="18" max-rows="30"></b-form-textarea> -->
 
+      <!-- Themes and Subtehemes select dropdowns -->
       <div v-if="articleText">
-        <div class="row mt-5">
+        <!-- Text highlighting caption (légende) -->
+        <b-accordion style="width: 100%" class="mt-3 mb-4 shadow-none">
+          <b-accordion-item title="Légende du texte">
+            <ul>
+              <li>
+                <hl_notfrench>Mot en dehors du dictionnaire français</hl_notfrench>
+              </li>
+              <li>
+                <hl_long>Phrase longue</hl_long>
+              </li>
+              <li>
+                <hl_quote>Citation</hl_quote>
+              </li>
+              <li>
+                <hl_list>Texte dans une liste</hl_list>
+              </li>
+            </ul>
+          </b-accordion-item>
+        </b-accordion>
+
+        <div class="row mt-2">
           <v-select
             :options="storyThemesSelect"
             default="Culture"
@@ -190,5 +211,9 @@ hl_quote {
 }
 hl_list {
   color: green;
+}
+
+#legend {
+  /* float: left; */
 }
 </style>
