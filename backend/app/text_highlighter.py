@@ -5,7 +5,7 @@ import unidecode
 
 # 336531 French words. From https://github.com/chrplr/openlexicon/blob/master/datasets-info/Liste-de-mots-francais-Gutenberg,
 # to which I added some words like 'puisqu'', 'aujourd'hui, quantique' etc.
-FRENCH_DICT = Path('./data/gutenberg_dictionary.txt')
+FRENCH_DICT = Path('./data/dictionnaire.txt')
 if not FRENCH_DICT.exists():    # Check in parent directory
     FRENCH_DICT = Path.cwd().parent / FRENCH_DICT
 
