@@ -12,7 +12,6 @@ import axios from "axios";
 const pageTitleOrUrl = ref("");
 let titleSelected = ref(false);
 let articleText = ref("");
-let showLegend = ref(false)
 
 let articleTheme: Ref<string | undefined> = ref(undefined);
 let articleSubtheme: Ref<string | undefined> = ref(undefined);
@@ -22,9 +21,7 @@ let themesToSubthemes: { [key: string]: [string] }
 let storyThemesSelect = ref([""])
 let storySubthemesSelect = ref([""])
 
-function selectTitleInput() {
-  titleSelected.value = true
-}
+
 
 async function retrieveArticleText() {
   var titleOrUrl = ""
@@ -92,7 +89,7 @@ onMounted(() => {
             :class="{ 'border-primary': titleSelected }"
             type="text"
             placeholder="Enter Wikipedia page title or URL"
-            @click="selectTitleInput"
+            @click="titleSelected = true"
             :required="true"
           ></b-form-input>
         </b-input-group>
@@ -111,24 +108,27 @@ onMounted(() => {
       <!-- Themes and Subtehemes select dropdowns -->
       <div v-if="articleText">
         <!-- Text highlighting caption (légende) -->
-        <b-accordion style="width: 100%" class="mt-3 mb-4 shadow-none">
-          <b-accordion-item title="Légende du texte">
-            <ul>
-              <li>
-                <hl_notfrench>Mot en dehors du dictionnaire français</hl_notfrench>
-              </li>
-              <li>
-                <hl_long>Phrase longue</hl_long>
-              </li>
-              <li>
-                <hl_quote>Citation</hl_quote>
-              </li>
-              <li>
-                <hl_list>Texte dans une liste</hl_list>
-              </li>
-            </ul>
-          </b-accordion-item>
-        </b-accordion>
+        <div class="mt-3 mb-4 shadow-none">
+          <b-button v-b-toggle.collapse-1 variant="outline-dark">Show Legend</b-button>
+          <b-collapse id="collapse-1" class="mt-2">
+            <b-card>
+              <ul>
+                <li>
+                  <hl_notfrench>Mot en dehors du dictionnaire français</hl_notfrench>
+                </li>
+                <li>
+                  <hl_long>Phrase longue</hl_long>
+                </li>
+                <li>
+                  <hl_quote>Citation</hl_quote>
+                </li>
+                <li>
+                  <hl_list>Texte dans une liste</hl_list>
+                </li>
+              </ul>
+            </b-card>
+          </b-collapse>
+        </div>
 
         <div class="row mt-2">
           <v-select
@@ -215,5 +215,7 @@ hl_list {
 
 #legend {
   /* float: left; */
+  height: 10px;
+  max-height: 10px;
 }
 </style>
